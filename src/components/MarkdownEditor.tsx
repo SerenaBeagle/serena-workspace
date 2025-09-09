@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import CustomMarkdown from './CustomMarkdown';
 import { useWorkspace } from '../context/WorkspaceContext';

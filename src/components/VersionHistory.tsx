@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, Eye, RotateCcw } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { PageVersion } from '../types';

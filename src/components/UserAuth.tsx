@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, LogIn, UserPlus, X } from 'lucide-react';
+import { LogIn, UserPlus, X } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 
 interface UserAuthProps {

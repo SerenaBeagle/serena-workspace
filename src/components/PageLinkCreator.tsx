@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, Plus, Search } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 

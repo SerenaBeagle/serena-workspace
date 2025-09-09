@@ -1,4 +1,3 @@
-import React from 'react';
 import MarkdownEditor from './MarkdownEditor';
 import { useWorkspace } from '../context/WorkspaceContext';
 

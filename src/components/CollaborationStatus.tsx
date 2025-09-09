@@ -1,5 +1,4 @@
-import React from 'react';
-import { Users, Wifi, WifiOff, Circle } from 'lucide-react';
+import { Users, Wifi, WifiOff } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 
 export default function CollaborationStatus() {
