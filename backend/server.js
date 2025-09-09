@@ -115,6 +115,7 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log('='.repeat(50));
   console.log('🚀 NOTION WORKSPACE BACKEND STARTING...');
+  console.log('🔄 MongoDB whitelist updated - retrying connection...');
   console.log('='.repeat(50));
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
