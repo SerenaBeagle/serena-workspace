@@ -61,11 +61,11 @@ export default function UserAuth({ onClose }: UserAuthProps) {
       <div className="user-profile">
         <div className="user-info">
           <div className="user-avatar">
-            {state.currentUser.name.charAt(0).toUpperCase()}
+            {state.currentUser.name?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <div className="user-details">
-            <div className="user-name">{state.currentUser.name}</div>
-            <div className="user-email">{state.currentUser.email}</div>
+            <div className="user-name">{state.currentUser.name || 'Unknown'}</div>
+            <div className="user-email">{state.currentUser.email || 'No email'}</div>
           </div>
         </div>
         <button className="logout-button" onClick={handleLogout}>

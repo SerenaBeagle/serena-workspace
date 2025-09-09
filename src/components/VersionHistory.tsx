@@ -131,9 +131,9 @@ export default function VersionHistory({ pageId, onClose, onRestore }: VersionHi
                   
                   <div className="version-author">
                     <div className="author-avatar">
-                      {user.name.charAt(0).toUpperCase()}
+                      {user.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
-                    <span className="author-name">{user.name}</span>
+                    <span className="author-name">{user.name || 'Unknown'}</span>
                   </div>
 
                   {version.changeDescription && (

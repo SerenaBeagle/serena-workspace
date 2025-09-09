@@ -40,9 +40,9 @@ export default function CollaborationStatus() {
               <div
                 key={collaborator.id}
                 className="collaborator-avatar"
-                title={collaborator.name}
+                title={collaborator.name || 'Unknown'}
               >
-                {collaborator.name.charAt(0).toUpperCase()}
+                {collaborator.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
             ))}
             {onlineCollaborators.length > 3 && (
