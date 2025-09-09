@@ -36,7 +36,10 @@ export function useWorkspaceActions() {
         title, 
         parentPageId 
       };
-      console.log('Request data being sent:', requestData);
+      console.log('Request data being sent:', JSON.stringify(requestData, null, 2));
+      console.log('ProjectId type:', typeof projectId, 'Value:', projectId);
+      console.log('Title type:', typeof title, 'Value:', title);
+      console.log('ParentPageId type:', typeof parentPageId, 'Value:', parentPageId);
       
       const pageData = await apiService.createPage(requestData);
       

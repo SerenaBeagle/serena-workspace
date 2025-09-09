@@ -65,6 +65,7 @@ router.post('/', auth, [
     // Create initial version
     const version = new PageVersion({
       pageId: page._id,
+      version: 1,
       title: page.title,
       content: page.content,
       createdBy: req.user._id,
