@@ -22,8 +22,21 @@ setInterval(() => {
 }, 60000); // Clean up every minute
 
 const socketHandlers = (socket, io) => {
+  // Set connection timeout using Socket.IO method
+  socket.setMaxListeners(20); // Limit event listeners
+  
   // Set connection timeout
-  socket.setTimeout(30000); // 30 seconds
+  const connectionTimeout = setTimeout(() => {
+    if (!socket.userId) {
+      console.log('Connection timeout, disconnecting socket:', socket.id);
+      socket.disconnect(true);
+    }
+  }, 30000); // 30 seconds
+  
+  // Clear timeout when authenticated
+  socket.on('authenticated', () => {
+    clearTimeout(connectionTimeout);
+  });
   
   // Authenticate socket connection
   socket.on('authenticate', async (token) => {
