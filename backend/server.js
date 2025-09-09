@@ -21,7 +21,11 @@ const server = createServer(app);
 // Socket.IO setup
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: [
+      process.env.FRONTEND_URL || "http://localhost:3000",
+      "https://serena-workspace.vercel.app",
+      "https://serena-workspace-git-main.vercel.app"
+    ],
     methods: ["GET", "POST"]
   }
 });
@@ -29,7 +33,11 @@ const io = new Server(server, {
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: [
+    process.env.FRONTEND_URL || "http://localhost:3000",
+    "https://serena-workspace.vercel.app",
+    "https://serena-workspace-git-main.vercel.app"
+  ],
   credentials: true
 }));
 
