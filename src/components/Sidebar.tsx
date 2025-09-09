@@ -1,0 +1,147 @@
+import React, { useState } from 'react';
+import { Plus, Folder, FileText, ChevronRight, ChevronDown, Link } from 'lucide-react';
+import { useWorkspace } from '../context/WorkspaceContext';
+import { Page } from '../types';
+
+export default function Sidebar() {
+  const { state, dispatch } = useWorkspace();
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [newProjectTitle, setNewProjectTitle] = useState('');
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+
+  const toggleProjectExpansion = (projectId: string) => {
+    const newExpanded = new Set(expandedProjects);
+    if (newExpanded.has(projectId)) {
+      newExpanded.delete(projectId);
+    } else {
+      newExpanded.add(projectId);
+    }
+    setExpandedProjects(newExpanded);
+  };
+
+  const handleCreateProject = () => {
+    if (newProjectTitle.trim()) {
+      dispatch({ type: 'CREATE_PROJECT', payload: { title: newProjectTitle.trim() } });
+      setNewProjectTitle('');
+      setIsCreatingProject(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleCreateProject();
+    } else if (e.key === 'Escape') {
+      setIsCreatingProject(false);
+      setNewProjectTitle('');
+    }
+  };
+
+  const renderPageHierarchy = (pages: Page[], parentId?: string, level: number = 0) => {
+    const rootPages = pages.filter(page => 
+      parentId ? page.parentPageId === parentId : !page.parentPageId
+    );
+
+    return rootPages.map((page) => (
+      <div key={page.id} className="page-hierarchy">
+        <div
+          className={`page-item ${state.currentPage?.id === page.id ? 'active' : ''}`}
+          style={{ paddingLeft: `${level * 16 + 8}px` }}
+          onClick={() => dispatch({ type: 'SELECT_PAGE', payload: { pageId: page.id } })}
+        >
+          <FileText size={14} />
+          <span className="page-title">{page.title}</span>
+          {page.linkedPages.length > 0 && (
+            <Link size={12} className="link-indicator" title={`${page.linkedPages.length} linked pages`} />
+          )}
+        </div>
+        
+        {/* Render child pages */}
+        {page.childPages.length > 0 && renderPageHierarchy(pages, page.id, level + 1)}
+      </div>
+    ));
+  };
+
+  return (
+    <div className="sidebar">
+      <div className="sidebar-header">
+        <h2>Workspace</h2>
+        <button
+          className="add-button"
+          onClick={() => setIsCreatingProject(true)}
+          title="New Project"
+        >
+          <Plus size={16} />
+        </button>
+      </div>
+
+      <div className="sidebar-content">
+        {isCreatingProject && (
+          <div className="create-project-form">
+            <input
+              type="text"
+              placeholder="Project name..."
+              value={newProjectTitle}
+              onChange={(e) => setNewProjectTitle(e.target.value)}
+              onKeyDown={handleKeyPress}
+              onBlur={() => {
+                if (!newProjectTitle.trim()) {
+                  setIsCreatingProject(false);
+                }
+              }}
+              autoFocus
+            />
+          </div>
+        )}
+
+        {state.projects.map((project) => (
+          <div key={project.id} className="project-item">
+            <div
+              className="project-header"
+              onClick={() => {
+                dispatch({ type: 'SELECT_PROJECT', payload: { projectId: project.id } });
+                toggleProjectExpansion(project.id);
+              }}
+            >
+              <div className="project-toggle">
+                {expandedProjects.has(project.id) ? (
+                  <ChevronDown size={14} />
+                ) : (
+                  <ChevronRight size={14} />
+                )}
+                <Folder size={16} />
+              </div>
+              <span className="project-title">{project.title}</span>
+            </div>
+
+            {expandedProjects.has(project.id) && (
+              <div className="pages-list">
+                {renderPageHierarchy(project.pages)}
+                <button
+                  className="add-page-button"
+                  onClick={() => {
+                    const title = prompt('Page title:');
+                    if (title?.trim()) {
+                      dispatch({
+                        type: 'CREATE_PAGE',
+                        payload: { projectId: project.id, title: title.trim() },
+                      });
+                    }
+                  }}
+                >
+                  <Plus size={12} />
+                  <span>Add page</span>
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {state.projects.length === 0 && (
+          <div className="empty-state">
+            <p>No projects yet. Create your first project to get started!</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
