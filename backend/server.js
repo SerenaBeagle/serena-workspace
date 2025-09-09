@@ -117,6 +117,8 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Health check endpoint: http://0.0.0.0:${PORT}/api/health`);
   console.log(`MongoDB URI configured: ${process.env.MONGODB_URI ? 'Yes' : 'No'}`);
+  console.log(`JWT Secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No'}`);
+  console.log(`All environment variables loaded successfully!`);
 });
 
 module.exports = { app, server, io };
