@@ -45,12 +45,22 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/notion-workspace', {
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/notion-workspace';
+console.log('Attempting to connect to MongoDB...');
+console.log('MongoDB URI:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
+
+mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('MongoDB connected successfully'))
-.catch(err => console.error('MongoDB connection error:', err));
+.then(() => {
+  console.log('MongoDB connected successfully');
+  console.log('Database connection established');
+})
+.catch(err => {
+  console.error('MongoDB connection error:', err);
+  console.error('Failed to connect to database');
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -93,9 +103,11 @@ app.use('*', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Health check endpoint: http://0.0.0.0:${PORT}/api/health`);
+  console.log(`MongoDB URI configured: ${process.env.MONGODB_URI ? 'Yes' : 'No'}`);
 });
 
 module.exports = { app, server, io };
