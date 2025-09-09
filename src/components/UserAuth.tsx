@@ -1,50 +1,59 @@
 import React, { useState } from 'react';
 import { LogIn, UserPlus, X } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useWorkspaceActions } from '../hooks/useWorkspaceActions';
 
 interface UserAuthProps {
   onClose?: () => void;
 }
 
 export default function UserAuth({ onClose }: UserAuthProps) {
-  const { state, dispatch } = useWorkspace();
+  const { state } = useWorkspace();
+  const { login, register, logout } = useWorkspaceActions();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.email.trim()) {
-      alert('Please fill in all fields');
+    setIsLoading(true);
+    setError('');
+
+    if (!formData.email.trim() || !formData.password.trim()) {
+      setError('Please fill in all fields');
+      setIsLoading(false);
       return;
     }
 
-    // Create a simple user ID (in a real app, this would come from a server)
-    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    const newUser = {
-      id: userId,
-      name: formData.name.trim(),
-      email: formData.email.trim(),
-      createdAt: new Date(),
-      lastActiveAt: new Date(),
-    };
+    if (!isLogin && !formData.name.trim()) {
+      setError('Please fill in all fields');
+      setIsLoading(false);
+      return;
+    }
 
-    // In a real app, this would be an API call
-    dispatch({
-      type: 'SET_CURRENT_USER',
-      payload: { user: newUser },
-    });
-
-    setFormData({ name: '', email: '' });
-    onClose?.();
+    try {
+      if (isLogin) {
+        await login(formData.email, formData.password);
+      } else {
+        await register(formData.name, formData.email, formData.password);
+      }
+      
+      setFormData({ name: '', email: '', password: '' });
+      onClose?.();
+    } catch (error: any) {
+      setError(error.message || 'Authentication failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLogout = () => {
-    dispatch({ type: 'LOGOUT' });
+    logout();
   };
 
   if (state.currentUser) {
@@ -77,17 +86,21 @@ export default function UserAuth({ onClose }: UserAuthProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="name">Name</label>
-            <input
-              id="name"
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Enter your name"
-              required
-            />
-          </div>
+          {error && <div className="error-message">{error}</div>}
+          
+          {!isLogin && (
+            <div className="form-group">
+              <label htmlFor="name">Name</label>
+              <input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Enter your name"
+                required={!isLogin}
+              />
+            </div>
+          )}
 
           <div className="form-group">
             <label htmlFor="email">Email</label>
@@ -101,8 +114,22 @@ export default function UserAuth({ onClose }: UserAuthProps) {
             />
           </div>
 
-          <button type="submit" className="auth-submit-button">
-            {isLogin ? (
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+
+          <button type="submit" className="auth-submit-button" disabled={isLoading}>
+            {isLoading ? (
+              'Loading...'
+            ) : isLogin ? (
               <>
                 <LogIn size={16} />
                 Sign In

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Plus, Folder, FileText, ChevronRight, ChevronDown, Link } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useWorkspaceActions } from '../hooks/useWorkspaceActions';
 import { Page } from '../types';
 
 export default function Sidebar() {
-  const { state, dispatch } = useWorkspace();
+  const { state } = useWorkspace();
+  const { createProject, selectProject, selectPage } = useWorkspaceActions();
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [newProjectTitle, setNewProjectTitle] = useState('');
   const [isCreatingProject, setIsCreatingProject] = useState(false);
@@ -19,11 +21,15 @@ export default function Sidebar() {
     setExpandedProjects(newExpanded);
   };
 
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
     if (newProjectTitle.trim()) {
-      dispatch({ type: 'CREATE_PROJECT', payload: { title: newProjectTitle.trim() } });
-      setNewProjectTitle('');
-      setIsCreatingProject(false);
+      try {
+        await createProject(newProjectTitle.trim());
+        setNewProjectTitle('');
+        setIsCreatingProject(false);
+      } catch (error) {
+        console.error('Failed to create project:', error);
+      }
     }
   };
 
@@ -46,7 +52,7 @@ export default function Sidebar() {
         <div
           className={`page-item ${state.currentPage?.id === page.id ? 'active' : ''}`}
           style={{ paddingLeft: `${level * 16 + 8}px` }}
-          onClick={() => dispatch({ type: 'SELECT_PAGE', payload: { pageId: page.id } })}
+          onClick={() => selectPage(page.id)}
         >
           <FileText size={14} />
           <span className="page-title">{page.title}</span>
@@ -98,7 +104,7 @@ export default function Sidebar() {
             <div
               className="project-header"
               onClick={() => {
-                dispatch({ type: 'SELECT_PROJECT', payload: { projectId: project.id } });
+                selectProject(project.id);
                 toggleProjectExpansion(project.id);
               }}
             >

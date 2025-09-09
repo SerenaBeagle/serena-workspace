@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import CustomMarkdown from './CustomMarkdown';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useWorkspaceActions } from '../hooks/useWorkspaceActions';
 
 interface MarkdownEditorProps {
   pageId: string;
@@ -10,20 +11,30 @@ interface MarkdownEditorProps {
 }
 
 export default function MarkdownEditor({ pageId, content, isSplitView = false }: MarkdownEditorProps) {
-  const { dispatch } = useWorkspace();
+  const { state } = useWorkspace();
+  const { updatePageContent } = useWorkspaceActions();
   const [editorContent, setEditorContent] = useState(content);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     setEditorContent(content);
   }, [content]);
 
-  const handleEditorChange = (value: string | undefined) => {
+  const handleEditorChange = async (value: string | undefined) => {
     const newContent = value || '';
     setEditorContent(newContent);
-    dispatch({
-      type: 'UPDATE_PAGE_CONTENT',
-      payload: { pageId, content: newContent },
-    });
+    
+    // Debounce API calls
+    if (isUpdating) return;
+    
+    setIsUpdating(true);
+    try {
+      await updatePageContent(pageId, newContent, 'Content updated');
+    } catch (error) {
+      console.error('Failed to update page content:', error);
+    } finally {
+      setTimeout(() => setIsUpdating(false), 1000); // Debounce for 1 second
+    }
   };
 
   if (isSplitView) {

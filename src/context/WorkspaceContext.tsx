@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Project, Page, WorkspaceState, PageLink, User, PageVersion, ProjectCollaborator } from '../types';
+import apiService from '../services/api';
+import socketService from '../services/socket';
 
 type WorkspaceAction =
   | { type: 'CREATE_PROJECT'; payload: { title: string; description?: string } }
@@ -360,6 +362,37 @@ const WorkspaceContext = createContext<{
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(workspaceReducer, initialState);
 
+  // Initialize workspace data from backend
+  useEffect(() => {
+    const initializeWorkspace = async () => {
+      try {
+        // Check if user is logged in
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          apiService.setToken(token);
+          
+          // Get current user
+          const user = await apiService.getCurrentUser();
+          dispatch({ type: 'SET_CURRENT_USER', payload: { user } });
+          
+          // Connect to socket
+          socketService.connect(token);
+          
+          // Load projects
+          const projects = await apiService.getProjects();
+          dispatch({ type: 'LOAD_WORKSPACE', payload: { ...state, projects, currentUser: user } });
+        }
+      } catch (error) {
+        console.error('Failed to initialize workspace:', error);
+        // Clear invalid token
+        localStorage.removeItem('authToken');
+        apiService.clearToken();
+      }
+    };
+
+    initializeWorkspace();
+  }, []);
+
   // Listen for online/offline status
   useEffect(() => {
     const handleOnline = () => dispatch({ type: 'SET_ONLINE_STATUS', payload: { isOnline: true } });
@@ -371,6 +404,45 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Socket event listeners
+  useEffect(() => {
+    const handleUserJoined = (data: any) => {
+      dispatch({ type: 'UPDATE_COLLABORATORS', payload: { collaborators: data.collaborators } });
+    };
+
+    const handleUserLeft = (data: any) => {
+      dispatch({ type: 'UPDATE_COLLABORATORS', payload: { collaborators: data.collaborators } });
+    };
+
+    const handlePageContentUpdated = (data: any) => {
+      dispatch({ type: 'UPDATE_PAGE_CONTENT', payload: { 
+        pageId: data.pageId, 
+        content: data.content,
+        changeDescription: `Updated by ${data.user?.name || 'Unknown'}`
+      }});
+    };
+
+    const handlePageTitleUpdated = (data: any) => {
+      dispatch({ type: 'UPDATE_PAGE_TITLE', payload: { 
+        pageId: data.pageId, 
+        title: data.title,
+        changeDescription: `Updated by ${data.user?.name || 'Unknown'}`
+      }});
+    };
+
+    socketService.on('user_joined', handleUserJoined);
+    socketService.on('user_left', handleUserLeft);
+    socketService.on('page_content_updated', handlePageContentUpdated);
+    socketService.on('page_title_updated', handlePageTitleUpdated);
+
+    return () => {
+      socketService.off('user_joined', handleUserJoined);
+      socketService.off('user_left', handleUserLeft);
+      socketService.off('page_content_updated', handlePageContentUpdated);
+      socketService.off('page_title_updated', handlePageTitleUpdated);
     };
   }, []);
 
