@@ -27,15 +27,26 @@ export function useWorkspaceActions() {
   // Page actions
   const createPage = useCallback(async (projectId: string, title: string, parentPageId?: string) => {
     try {
+      console.log('Creating page with data:', { projectId, title, parentPageId });
+      console.log('Current token:', localStorage.getItem('authToken') ? 'Present' : 'Missing');
+      
       const pageData = await apiService.createPage({ 
         projectId, 
         title, 
         parentPageId 
       });
+      
+      console.log('Page created successfully:', pageData);
       dispatch({ type: 'CREATE_PAGE', payload: pageData });
       return pageData;
     } catch (error) {
       console.error('Failed to create page:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        projectId,
+        title
+      });
       throw error;
     }
   }, [dispatch]);

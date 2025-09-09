@@ -26,7 +26,14 @@ router.post('/', auth, [
     // Check project permission
     const Project = require('../models/Project');
     const project = await Project.findById(projectId);
-    if (!project || !project.hasPermission(req.user._id, 'editor')) {
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    
+    // For global projects, allow all authenticated users to create pages
+    if (project.isGlobal && project.isPublic) {
+      // Allow all users to create pages in global public projects
+    } else if (!project.hasPermission(req.user._id, 'editor')) {
       return res.status(403).json({ message: 'Insufficient permissions' });
     }
 
