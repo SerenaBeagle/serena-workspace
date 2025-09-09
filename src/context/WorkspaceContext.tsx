@@ -105,6 +105,8 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         parentPageId: action.payload.parentPageId,
         childPages: [],
         linkedPages: [],
+        createdBy: state.currentUser?.id || 'anonymous',
+        lastModifiedBy: state.currentUser?.id || 'anonymous',
       };
 
       const updatedProjects = state.projects.map(project =>
@@ -209,6 +211,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         targetPageId: action.payload.targetPageId,
         linkText: action.payload.linkText,
         createdAt: new Date(),
+        createdBy: state.currentUser?.id || 'anonymous',
       };
 
       // Update the source page's linkedPages array

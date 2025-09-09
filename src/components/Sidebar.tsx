@@ -51,7 +51,7 @@ export default function Sidebar() {
           <FileText size={14} />
           <span className="page-title">{page.title}</span>
           {page.linkedPages.length > 0 && (
-            <Link size={12} className="link-indicator" title={`${page.linkedPages.length} linked pages`} />
+            <Link size={12} className="link-indicator" />
           )}
         </div>
         

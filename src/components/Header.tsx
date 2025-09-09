@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Split, FileText, Edit3, Save, History, User } from 'lucide-react';
+import { Split, FileText, Edit3, History, User } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import PageLinkCreator from './PageLinkCreator';
 import UserAuth from './UserAuth';

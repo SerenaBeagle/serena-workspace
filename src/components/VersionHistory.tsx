@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, User, ArrowLeft, Eye, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Eye, RotateCcw } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { PageVersion } from '../types';
 
@@ -10,7 +10,7 @@ interface VersionHistoryProps {
 }
 
 export default function VersionHistory({ pageId, onClose, onRestore }: VersionHistoryProps) {
-  const { state, dispatch } = useWorkspace();
+  const { state } = useWorkspace();
   const [selectedVersion, setSelectedVersion] = useState<PageVersion | null>(null);
 
   // Get versions for the current page

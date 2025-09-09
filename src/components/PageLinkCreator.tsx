@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, Plus, Search } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { Page } from '../types';
 
 interface PageLinkCreatorProps {
   currentPageId: string;

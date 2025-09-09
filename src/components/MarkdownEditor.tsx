@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import CustomMarkdown from './CustomMarkdown';
-import PageLinkCreator from './PageLinkCreator';
 import { useWorkspace } from '../context/WorkspaceContext';
 
 interface MarkdownEditorProps {
