@@ -370,16 +370,25 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         // Check if user is logged in
         const token = localStorage.getItem('authToken');
         if (token) {
-          // For now, just set a simple user to avoid API errors
-          const mockUser = {
-            id: 'temp-user',
-            name: 'Loading...',
-            email: 'loading@example.com',
-            avatar: null,
-            createdAt: new Date(),
-            lastActiveAt: new Date()
-          };
-          dispatch({ type: 'SET_CURRENT_USER', payload: { user: mockUser } });
+          try {
+            // Verify token with backend
+            apiService.setToken(token);
+            const user = await apiService.getCurrentUser();
+            dispatch({ type: 'SET_CURRENT_USER', payload: { user } });
+            
+            // Connect to socket
+            socketService.connect(token);
+            
+            // Load projects
+            const projects = await apiService.getProjects();
+            dispatch({ type: 'LOAD_WORKSPACE', payload: { ...state, projects, currentUser: user } });
+          } catch (error) {
+            console.error('Token validation failed:', error);
+            // Clear invalid token
+            localStorage.removeItem('authToken');
+            apiService.clearToken();
+            socketService.disconnect();
+          }
         }
       } catch (error) {
         console.error('Failed to initialize workspace:', error);
