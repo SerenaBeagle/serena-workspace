@@ -113,12 +113,18 @@ app.use('*', (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, '0.0.0.0', () => {
+  console.log('='.repeat(50));
+  console.log('🚀 NOTION WORKSPACE BACKEND STARTING...');
+  console.log('='.repeat(50));
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Health check endpoint: http://0.0.0.0:${PORT}/api/health`);
   console.log(`MongoDB URI configured: ${process.env.MONGODB_URI ? 'Yes' : 'No'}`);
   console.log(`JWT Secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No'}`);
   console.log(`All environment variables loaded successfully!`);
+  console.log('='.repeat(50));
+  console.log('✅ BACKEND READY TO ACCEPT REQUESTS!');
+  console.log('='.repeat(50));
 });
 
 module.exports = { app, server, io };
