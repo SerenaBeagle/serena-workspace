@@ -361,6 +361,7 @@ const WorkspaceContext = createContext<{
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(workspaceReducer, initialState);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Initialize workspace data from backend
   useEffect(() => {
@@ -371,26 +372,38 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         if (token) {
           apiService.setToken(token);
           
-          // Get current user
-          const user = await apiService.getCurrentUser();
-          dispatch({ type: 'SET_CURRENT_USER', payload: { user } });
-          
-          // Connect to socket
-          socketService.connect(token);
-          
-          // Load projects
-          const projects = await apiService.getProjects();
-          dispatch({ type: 'LOAD_WORKSPACE', payload: { ...state, projects, currentUser: user } });
+          try {
+            // Get current user
+            const user = await apiService.getCurrentUser();
+            dispatch({ type: 'SET_CURRENT_USER', payload: { user } });
+            
+            // Connect to socket
+            socketService.connect(token);
+            
+            // Load projects
+            const projects = await apiService.getProjects();
+            dispatch({ type: 'LOAD_WORKSPACE', payload: { ...state, projects, currentUser: user } });
+          } catch (apiError) {
+            console.error('API call failed during initialization:', apiError);
+            // Clear invalid token and reset to logged out state
+            localStorage.removeItem('authToken');
+            apiService.clearToken();
+            socketService.disconnect();
+            dispatch({ type: 'LOGOUT' });
+          }
         }
       } catch (error) {
         console.error('Failed to initialize workspace:', error);
         // Clear invalid token
         localStorage.removeItem('authToken');
         apiService.clearToken();
+        socketService.disconnect();
       }
     };
 
-    initializeWorkspace();
+    initializeWorkspace().finally(() => {
+      setIsInitializing(false);
+    });
   }, []);
 
   // Listen for online/offline status
@@ -448,7 +461,20 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   return (
     <WorkspaceContext.Provider value={{ state, dispatch }}>
-      {children}
+      {isInitializing ? (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          fontSize: '16px',
+          color: '#666'
+        }}>
+          Loading...
+        </div>
+      ) : (
+        children
+      )}
     </WorkspaceContext.Provider>
   );
 }

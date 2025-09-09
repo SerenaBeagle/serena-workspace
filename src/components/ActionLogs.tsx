@@ -44,28 +44,22 @@ export default function ActionLogs({ onClose }: ActionLogsProps) {
       setLogs([]);
       setPagination({ page: 1, total: 0, pages: 0 });
       
-      // TODO: 实现真正的 API 调用
-      // const params = new URLSearchParams({
-      //   page: page.toString(),
-      //   limit: '20',
-      //   ...(filters.action && { action: filters.action }),
-      //   ...(filters.days && { days: filters.days })
-      // });
-
-      // const response = await fetch(`https://serena-workspace-production.up.railway.app/api/logs?${params}`, {
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // });
-
-      // if (!response.ok) {
-      //   throw new Error('Failed to load logs');
-      // }
-
-      // const data = await response.json();
-      // setLogs(data.logs);
-      // setPagination(data.pagination);
+      // 模拟一些示例数据
+      const mockLogs = [
+        {
+          id: '1',
+          userId: 'user1',
+          userName: 'Demo User',
+          action: 'user_registered',
+          description: 'User registered with email: demo@example.com',
+          targetType: 'user',
+          createdAt: new Date().toISOString()
+        }
+      ];
+      
+      setLogs(mockLogs);
+      setPagination({ page: 1, total: 1, pages: 1 });
+      
     } catch (error: any) {
       setError(error.message);
     } finally {
