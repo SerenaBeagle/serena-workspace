@@ -6,7 +6,7 @@ import { Page } from '../types';
 
 export default function Sidebar() {
   const { state } = useWorkspace();
-  const { createProject, selectProject, selectPage } = useWorkspaceActions();
+  const { createProject, selectProject, selectPage, createPage } = useWorkspaceActions();
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [newProjectTitle, setNewProjectTitle] = useState('');
   const [isCreatingProject, setIsCreatingProject] = useState(false);
@@ -128,13 +128,22 @@ export default function Sidebar() {
                 {renderPageHierarchy(project.pages || [])}
                 <button
                   className="add-page-button"
-                  onClick={() => {
+                  onClick={async () => {
+                    if (!state.currentUser) {
+                      alert('Please log in first to create pages.');
+                      return;
+                    }
+                    
                     const title = prompt('Page title:');
                     if (title?.trim()) {
-                      dispatch({
-                        type: 'CREATE_PAGE',
-                        payload: { projectId: project.id, title: title.trim() },
-                      });
+                      try {
+                        console.log('Creating page:', { projectId: project.id, title: title.trim() });
+                        const pageData = await createPage(project.id, title.trim());
+                        console.log('Page created successfully:', pageData);
+                      } catch (error) {
+                        console.error('Failed to create page:', error);
+                        alert(`Failed to create page: ${error.message || 'Unknown error'}`);
+                      }
                     }
                   }}
                 >
