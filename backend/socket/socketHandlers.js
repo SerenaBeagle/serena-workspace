@@ -3,9 +3,23 @@ const User = require('../models/User');
 const Project = require('../models/Project');
 const Page = require('../models/Page');
 
-// Store active users and their socket connections
+// Store active users and their socket connections - limited for memory
 const activeUsers = new Map();
 const userSockets = new Map();
+
+// Clean up old connections periodically
+setInterval(() => {
+  if (activeUsers.size > 100) { // Limit to 100 concurrent users
+    console.log('Too many active users, cleaning up...');
+    // Remove oldest entries
+    const entries = Array.from(activeUsers.entries());
+    const toRemove = entries.slice(0, 20); // Remove 20 oldest
+    toRemove.forEach(([userId, data]) => {
+      activeUsers.delete(userId);
+      userSockets.delete(userId);
+    });
+  }
+}, 60000); // Clean up every minute
 
 const socketHandlers = (socket, io) => {
   // Set connection timeout

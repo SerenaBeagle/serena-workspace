@@ -19,7 +19,7 @@ const socketHandlers = require('./socket/socketHandlers');
 const app = express();
 const server = createServer(app);
 
-// Socket.IO setup
+// Socket.IO setup - optimized for memory
 const io = new Server(server, {
   cors: {
     origin: [
@@ -28,7 +28,12 @@ const io = new Server(server, {
       "https://serena-workspace-git-main.vercel.app"
     ],
     methods: ["GET", "POST"]
-  }
+  },
+  // Memory optimization
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  maxHttpBufferSize: 1e6, // 1MB
+  allowEIO3: true
 });
 
 // Middleware
@@ -42,10 +47,10 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
+// Rate limiting - more restrictive for free tier
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 50, // Reduced to 50 requests per windowMs
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
@@ -128,6 +133,35 @@ app.use('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// Memory monitoring
+setInterval(() => {
+  const memUsage = process.memoryUsage();
+  const memMB = Math.round(memUsage.rss / 1024 / 1024);
+  console.log(`Memory usage: ${memMB}MB`);
+  
+  // If memory usage is too high, log warning
+  if (memMB > 400) { // Railway free tier limit is ~512MB
+    console.warn(`High memory usage: ${memMB}MB`);
+  }
+}, 30000); // Check every 30 seconds
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
+});
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log('='.repeat(50));
