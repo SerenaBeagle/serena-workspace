@@ -42,7 +42,11 @@ export default function Sidebar() {
     }
   };
 
-  const renderPageHierarchy = (pages: Page[], parentId?: string, level: number = 0) => {
+  const renderPageHierarchy = (pages: Page[] = [], parentId?: string, level: number = 0) => {
+    if (!pages || !Array.isArray(pages)) {
+      return null;
+    }
+    
     const rootPages = pages.filter(page => 
       parentId ? page.parentPageId === parentId : !page.parentPageId
     );
@@ -56,13 +60,13 @@ export default function Sidebar() {
         >
           <FileText size={14} />
           <span className="page-title">{page.title}</span>
-          {page.linkedPages.length > 0 && (
+          {page.linkedPages && page.linkedPages.length > 0 && (
             <Link size={12} className="link-indicator" />
           )}
         </div>
         
         {/* Render child pages */}
-        {page.childPages.length > 0 && renderPageHierarchy(pages, page.id, level + 1)}
+        {page.childPages && page.childPages.length > 0 && renderPageHierarchy(pages, page.id, level + 1)}
       </div>
     ));
   };
@@ -99,7 +103,7 @@ export default function Sidebar() {
           </div>
         )}
 
-        {state.projects.map((project) => (
+        {state.projects && Array.isArray(state.projects) ? state.projects.map((project) => (
           <div key={project.id} className="project-item">
             <div
               className="project-header"
@@ -121,7 +125,7 @@ export default function Sidebar() {
 
             {expandedProjects.has(project.id) && (
               <div className="pages-list">
-                {renderPageHierarchy(project.pages)}
+                {renderPageHierarchy(project.pages || [])}
                 <button
                   className="add-page-button"
                   onClick={() => {
@@ -140,9 +144,7 @@ export default function Sidebar() {
               </div>
             )}
           </div>
-        ))}
-
-        {state.projects.length === 0 && (
+        )) : (
           <div className="empty-state">
             <p>No projects yet. Create your first project to get started!</p>
           </div>
