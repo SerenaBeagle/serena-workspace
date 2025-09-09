@@ -16,24 +16,36 @@ router.post('/', auth, [
   body('content').optional().isString()
 ], async (req, res) => {
   try {
+    console.log('=== CREATE PAGE REQUEST ===');
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    console.log('User:', req.user);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     const { title, projectId, parentPageId, content = '' } = req.body;
+    console.log('Extracted data:', { title, projectId, parentPageId, content });
 
     // Check project permission
     const Project = require('../models/Project');
     const project = await Project.findById(projectId);
+    console.log('Found project:', project);
+    
     if (!project) {
+      console.log('Project not found for ID:', projectId);
       return res.status(404).json({ message: 'Project not found' });
     }
     
     // For global projects, allow all authenticated users to create pages
     if (project.isGlobal && project.isPublic) {
+      console.log('Global public project - allowing page creation');
       // Allow all users to create pages in global public projects
     } else if (!project.hasPermission(req.user._id, 'editor')) {
+      console.log('Insufficient permissions for project:', projectId);
       return res.status(403).json({ message: 'Insufficient permissions' });
     }
 

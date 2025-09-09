@@ -29,12 +29,16 @@ export function useWorkspaceActions() {
     try {
       console.log('Creating page with data:', { projectId, title, parentPageId });
       console.log('Current token:', localStorage.getItem('authToken') ? 'Present' : 'Missing');
+      console.log('Token value:', localStorage.getItem('authToken'));
       
-      const pageData = await apiService.createPage({ 
+      const requestData = { 
         projectId, 
         title, 
         parentPageId 
-      });
+      };
+      console.log('Request data being sent:', requestData);
+      
+      const pageData = await apiService.createPage(requestData);
       
       console.log('Page created successfully:', pageData);
       dispatch({ type: 'CREATE_PAGE', payload: pageData });
