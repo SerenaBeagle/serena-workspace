@@ -11,6 +11,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const projectRoutes = require('./routes/projects');
 const pageRoutes = require('./routes/pages');
+const logRoutes = require('./routes/logs');
 
 // Import socket handlers
 const socketHandlers = require('./socket/socketHandlers');
@@ -74,6 +75,7 @@ mongoose.connect(mongoUri, {
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/pages', pageRoutes);
+app.use('/api/logs', logRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

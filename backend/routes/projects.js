@@ -2,16 +2,20 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Project = require('../models/Project');
 const Page = require('../models/Page');
+const Workspace = require('../models/Workspace');
 const { auth } = require('../middleware/auth');
 const { checkProjectPermission } = require('../middleware/permissions');
+const { logProjectCreation, logProjectUpdate } = require('../middleware/logging');
 
 const router = express.Router();
 
-// Get all projects for user
+// Get all projects (global workspace - all users see the same projects)
 router.get('/', auth, async (req, res) => {
   try {
+    // 获取全局工作空间的所有项目
     const projects = await Project.find({
-      'collaborators.userId': req.user._id
+      isGlobal: true,
+      isPublic: true
     })
     .populate('createdBy', 'name email avatar')
     .populate('collaborators.userId', 'name email avatar')
@@ -27,7 +31,7 @@ router.get('/', auth, async (req, res) => {
 router.post('/', auth, [
   body('title').trim().isLength({ min: 1, max: 100 }).withMessage('Title is required'),
   body('description').optional().trim().isLength({ max: 500 })
-], async (req, res) => {
+], logProjectCreation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -36,10 +40,16 @@ router.post('/', auth, [
 
     const { title, description } = req.body;
 
+    // 获取或创建全局工作空间
+    const workspace = await Workspace.getGlobalWorkspace();
+
     const project = new Project({
       title,
       description,
-      createdBy: req.user._id
+      createdBy: req.user._id,
+      workspaceId: workspace._id,
+      isGlobal: true,
+      isPublic: true
     });
 
     await project.save();

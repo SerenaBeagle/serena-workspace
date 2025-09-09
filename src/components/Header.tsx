@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Split, Edit3, History, User } from 'lucide-react';
+import { Split, Edit3, History, User, Activity } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import PageLinkCreator from './PageLinkCreator';
 import UserAuth from './UserAuth';
 import VersionHistory from './VersionHistory';
 import CollaborationStatus from './CollaborationStatus';
+import ActionLogs from './ActionLogs';
 
 export default function Header() {
   const { state, dispatch } = useWorkspace();
@@ -12,6 +13,7 @@ export default function Header() {
   const [editTitle, setEditTitle] = useState('');
   const [showUserAuth, setShowUserAuth] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showActionLogs, setShowActionLogs] = useState(false);
 
   const handleTitleEdit = () => {
     if (state.currentPage) {
@@ -91,6 +93,15 @@ export default function Header() {
       <div className="header-right">
         <CollaborationStatus />
         
+        <button
+          className="logs-button"
+          onClick={() => setShowActionLogs(true)}
+          title="View action logs"
+        >
+          <Activity size={16} />
+          <span>Logs</span>
+        </button>
+        
         {state.currentPage && (
           <>
             <button
@@ -135,6 +146,10 @@ export default function Header() {
           onClose={() => setShowVersionHistory(false)}
           onRestore={handleRestoreVersion}
         />
+      )}
+
+      {showActionLogs && (
+        <ActionLogs onClose={() => setShowActionLogs(false)} />
       )}
     </div>
   );

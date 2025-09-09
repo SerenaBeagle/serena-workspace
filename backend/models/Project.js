@@ -39,10 +39,19 @@ const projectSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  workspaceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Workspace',
+    required: true
+  },
   collaborators: [collaboratorSchema],
   isPublic: {
     type: Boolean,
-    default: false
+    default: true  // 默认公开，所有用户都可以访问
+  },
+  isGlobal: {
+    type: Boolean,
+    default: true  // 标记为全局项目
   },
   settings: {
     allowComments: {
