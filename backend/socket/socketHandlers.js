@@ -8,6 +8,9 @@ const activeUsers = new Map();
 const userSockets = new Map();
 
 const socketHandlers = (socket, io) => {
+  // Set connection timeout
+  socket.setTimeout(30000); // 30 seconds
+  
   // Authenticate socket connection
   socket.on('authenticate', async (token) => {
     try {
@@ -215,8 +218,12 @@ const socketHandlers = (socket, io) => {
         }
 
         // Remove from active users
-        activeUsers.delete(socket.id);
+        activeUsers.delete(socket.userId);
         userSockets.delete(socket.userId);
+        
+        // Clean up socket references
+        socket.userId = null;
+        socket.user = null;
 
         // Notify all project rooms that user went offline
         const projects = await Project.find({
