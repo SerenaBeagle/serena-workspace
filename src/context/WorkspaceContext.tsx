@@ -115,7 +115,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         project.id === action.payload.projectId
           ? {
               ...project,
-              pages: [...project.pages, newPage],
+              pages: [...(project.pages || []), newPage],
               updatedAt: new Date(),
             }
           : project
@@ -125,7 +125,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
       if (action.payload.parentPageId) {
         const projectsWithUpdatedParent = updatedProjects.map(project => ({
           ...project,
-          pages: project.pages.map(page =>
+          pages: (project.pages || []).map(page =>
             page.id === action.payload.parentPageId
               ? { ...page, childPages: [...page.childPages, newPage.id] }
               : page
