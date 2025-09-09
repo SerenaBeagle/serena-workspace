@@ -21,7 +21,13 @@ router.get('/', auth, async (req, res) => {
     .populate('collaborators.userId', 'name email avatar')
     .sort({ updatedAt: -1 });
 
-    res.json(projects);
+    // Convert _id to id for frontend compatibility
+    const projectsWithId = projects.map(project => ({
+      ...project.toObject(),
+      id: project._id.toString()
+    }));
+    
+    res.json(projectsWithId);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

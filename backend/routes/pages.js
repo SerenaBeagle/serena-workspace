@@ -74,7 +74,13 @@ router.post('/', auth, [
     });
     await version.save();
 
-    res.status(201).json(page);
+    // Convert _id to id for frontend compatibility
+    const pageWithId = {
+      ...page.toObject(),
+      id: page._id.toString()
+    };
+    
+    res.status(201).json(pageWithId);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
