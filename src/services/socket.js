@@ -12,7 +12,7 @@ class SocketService {
       this.disconnect();
     }
 
-    const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
+    const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://serena-workspace-production.up.railway.app';
     
     this.socket = io(SOCKET_URL, {
       auth: {
