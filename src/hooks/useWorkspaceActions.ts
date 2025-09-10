@@ -31,6 +31,15 @@ export function useWorkspaceActions() {
       console.log('Current token:', localStorage.getItem('authToken') ? 'Present' : 'Missing');
       console.log('Token value:', localStorage.getItem('authToken'));
       
+      // Save current page content before creating new page
+      if (state.currentPage) {
+        try {
+          await updatePageContent(state.currentPage.id, state.editorContent || state.currentPage.content, 'Auto-save before creating new page');
+        } catch (error) {
+          console.error('Failed to save current page content:', error);
+        }
+      }
+      
       const requestData = { 
         projectId, 
         title, 
@@ -66,11 +75,20 @@ export function useWorkspaceActions() {
     }
   }, [dispatch]);
 
-  const selectPage = useCallback((pageId: string) => {
+  const selectPage = useCallback(async (pageId: string) => {
+    // Save current page content before switching
+    if (state.currentPage && state.currentPage.id !== pageId) {
+      try {
+        await updatePageContent(state.currentPage.id, state.editorContent || state.currentPage.content, 'Auto-save before switching');
+      } catch (error) {
+        console.error('Failed to save current page content:', error);
+      }
+    }
+    
     dispatch({ type: 'SELECT_PAGE', payload: { pageId } });
     // Start editing for real-time collaboration
     socketService.startEditing(pageId);
-  }, [dispatch]);
+  }, [dispatch, state.currentPage, state.editorContent, updatePageContent]);
 
   const updatePageContent = useCallback(async (pageId: string, content: string, changeDescription?: string) => {
     try {
