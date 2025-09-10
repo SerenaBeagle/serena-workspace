@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useReducer, ReactNode, useEffect, useState } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Project, Page, WorkspaceState, PageLink, User, PageVersion, ProjectCollaborator } from '../types';
+import { Project, Page, WorkspaceState, PageLink, PageVersion } from '../types';
 import apiService from '../services/api';
 import socketService from '../services/socket';
 
@@ -13,12 +13,6 @@ type WorkspaceAction =
   | { type: 'UPDATE_PAGE_TITLE'; payload: { pageId: string; title: string; changeDescription?: string } }
   | { type: 'TOGGLE_SPLIT_VIEW' }
   | { type: 'CREATE_PAGE_LINK'; payload: { sourcePageId: string; targetPageId: string; linkText: string } }
-  | { type: 'SET_CURRENT_USER'; payload: { user: User } }
-  | { type: 'LOGOUT' }
-  | { type: 'ADD_COLLABORATOR'; payload: { projectId: string; userId: string; role: 'editor' | 'viewer' } }
-  | { type: 'REMOVE_COLLABORATOR'; payload: { projectId: string; userId: string } }
-  | { type: 'SET_ONLINE_STATUS'; payload: { isOnline: boolean } }
-  | { type: 'UPDATE_COLLABORATORS'; payload: { collaborators: User[] } }
   | { type: 'RESTORE_PAGE_VERSION'; payload: { pageId: string; version: PageVersion } }
   | { type: 'LOAD_WORKSPACE'; payload: WorkspaceState };
 
@@ -28,11 +22,10 @@ const initialState: WorkspaceState = {
   currentPage: null,
   isSplitView: false,
   pageLinks: [],
-  users: [],
-  currentUser: null,
   pageVersions: [],
-  isOnline: navigator.onLine,
-  collaborators: [],
+  actionLogs: [],
+  editorContent: '',
+  isInitializing: true,
 };
 
 // Helper function to create page versions
@@ -41,48 +34,46 @@ const createPageVersion = (
   title: string,
   content: string,
   changeType: 'create' | 'edit' | 'rename' | 'delete',
-  createdBy: string,
   changeDescription?: string
 ): PageVersion => {
   return {
     id: uuidv4(),
     pageId,
-    version: 1, // This would be calculated based on existing versions
+    version: 1,
     title,
     content,
-    createdAt: new Date(),
-    createdBy,
     changeType,
-    changeDescription,
+    changeDescription: changeDescription || `Page ${changeType}`,
+    createdAt: new Date(),
+    createdBy: 'anonymous',
   };
 };
 
-function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
+const workspaceReducer = (state: WorkspaceState, action: WorkspaceAction): WorkspaceState => {
   switch (action.type) {
     case 'CREATE_PROJECT': {
-      if (!state.currentUser) return state;
-      
       const newProject: Project = {
         id: uuidv4(),
         title: action.payload.title,
-        description: action.payload.description,
+        description: action.payload.description || '',
         createdAt: new Date(),
         updatedAt: new Date(),
-        createdBy: state.currentUser.id,
         pages: [],
-        collaborators: [{
-          userId: state.currentUser.id,
-          role: 'owner',
-          addedAt: new Date(),
-          addedBy: state.currentUser.id,
-        }],
-        isPublic: false,
+        createdBy: 'anonymous',
+        lastModifiedBy: 'anonymous',
+        isPublic: true,
+        isGlobal: true,
+        collaborators: [],
+        settings: {
+          allowComments: true,
+          allowVersionHistory: true,
+        },
       };
+
       return {
         ...state,
         projects: [...state.projects, newProject],
         currentProject: newProject,
-        currentPage: null,
       };
     }
 
@@ -92,7 +83,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         ...state,
         currentProject: project || null,
         currentPage: null,
-        isSplitView: false,
+        editorContent: '',
       };
     }
 
@@ -108,8 +99,8 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         parentPageId: action.payload.parentPageId,
         childPages: action.payload.childPages || [],
         linkedPages: action.payload.linkedPages || [],
-        createdBy: action.payload.createdBy || state.currentUser?.id || 'anonymous',
-        lastModifiedBy: action.payload.lastModifiedBy || state.currentUser?.id || 'anonymous',
+        createdBy: action.payload.createdBy || 'anonymous',
+        lastModifiedBy: action.payload.lastModifiedBy || 'anonymous',
       };
 
       const updatedProjects = state.projects.map(project =>
@@ -161,6 +152,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
       return {
         ...state,
         currentPage: page || null,
+        editorContent: page?.content || '',
       };
     }
 
@@ -182,6 +174,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         ...state,
         projects: updatedProjects,
         currentPage: updatedPage || state.currentPage,
+        editorContent: action.payload.content,
       };
     }
 
@@ -220,7 +213,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         targetPageId: action.payload.targetPageId,
         linkText: action.payload.linkText,
         createdAt: new Date(),
-        createdBy: state.currentUser?.id || 'anonymous',
+        createdBy: 'anonymous',
       };
 
       // Update the source page's linkedPages array
@@ -240,82 +233,6 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
       };
     }
 
-    case 'SET_CURRENT_USER': {
-      const updatedUsers = state.users.find(u => u.id === action.payload.user.id)
-        ? state.users
-        : [...state.users, action.payload.user];
-      
-      return {
-        ...state,
-        currentUser: action.payload.user,
-        users: updatedUsers,
-      };
-    }
-
-    case 'LOGOUT': {
-      return {
-        ...state,
-        currentUser: null,
-        currentProject: null,
-        currentPage: null,
-      };
-    }
-
-    case 'ADD_COLLABORATOR': {
-      const newCollaborator: ProjectCollaborator = {
-        userId: action.payload.userId,
-        role: action.payload.role,
-        addedAt: new Date(),
-        addedBy: state.currentUser?.id || '',
-      };
-
-      const updatedProjects = state.projects.map(project =>
-        project.id === action.payload.projectId
-          ? {
-              ...project,
-              collaborators: [...project.collaborators, newCollaborator],
-            }
-          : project
-      );
-
-      return {
-        ...state,
-        projects: updatedProjects,
-      };
-    }
-
-    case 'REMOVE_COLLABORATOR': {
-      const updatedProjects = state.projects.map(project =>
-        project.id === action.payload.projectId
-          ? {
-              ...project,
-              collaborators: project.collaborators.filter(
-                c => c.userId !== action.payload.userId
-              ),
-            }
-          : project
-      );
-
-      return {
-        ...state,
-        projects: updatedProjects,
-      };
-    }
-
-    case 'SET_ONLINE_STATUS': {
-      return {
-        ...state,
-        isOnline: action.payload.isOnline,
-      };
-    }
-
-    case 'UPDATE_COLLABORATORS': {
-      return {
-        ...state,
-        collaborators: action.payload.collaborators,
-      };
-    }
-
     case 'RESTORE_PAGE_VERSION': {
       const { pageId, version } = action.payload;
       
@@ -329,7 +246,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
                 title: version.title,
                 content: version.content,
                 updatedAt: new Date(),
-                lastModifiedBy: state.currentUser?.id || '',
+                lastModifiedBy: 'anonymous',
               }
             : page
         ),
@@ -341,110 +258,127 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         version.title,
         version.content,
         'edit',
-        state.currentUser?.id || '',
         `Restored from version ${version.version}`
       );
 
       return {
         ...state,
         projects: updatedProjects,
+        currentPage: updatedProjects
+          .flatMap(p => p.pages)
+          .find(p => p.id === pageId) || state.currentPage,
         pageVersions: [...state.pageVersions, restoreVersion],
       };
     }
 
     case 'LOAD_WORKSPACE': {
-      return action.payload;
+      return {
+        ...action.payload,
+        isInitializing: false,
+      };
     }
 
     default:
       return state;
   }
-}
+};
 
-const WorkspaceContext = createContext<{
+interface WorkspaceContextType {
   state: WorkspaceState;
   dispatch: React.Dispatch<WorkspaceAction>;
-} | null>(null);
+}
 
-export function WorkspaceProvider({ children }: { children: ReactNode }) {
+const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
+
+export const useWorkspace = () => {
+  const context = useContext(WorkspaceContext);
+  if (context === undefined) {
+    throw new Error('useWorkspace must be used within a WorkspaceProvider');
+  }
+  return context;
+};
+
+interface WorkspaceProviderProps {
+  children: ReactNode;
+}
+
+export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(workspaceReducer, initialState);
-  const [isInitializing, setIsInitializing] = useState(true);
 
-  // Initialize workspace data from backend
+  // Initialize workspace
   useEffect(() => {
     const initializeWorkspace = async () => {
       try {
-        // Check if user is logged in
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          try {
-            // Verify token with backend
-            apiService.setToken(token);
-            const user = await apiService.getCurrentUser();
-            dispatch({ type: 'SET_CURRENT_USER', payload: { user } });
-            
-            // Connect to socket
-            socketService.connect(token);
-            
-            // Load projects
-            const projects = await apiService.getProjects();
-            dispatch({ type: 'LOAD_WORKSPACE', payload: { ...state, projects, currentUser: user } });
-          } catch (error) {
-            console.error('Token validation failed:', error);
-            // Clear invalid token
-            localStorage.removeItem('authToken');
-            apiService.clearToken();
-            socketService.disconnect();
+        // Load projects from API
+        const projects = await apiService.getProjects();
+        
+        // Create default project if none exist
+        let defaultProject;
+        if (projects.length === 0) {
+          const newProject = await apiService.createProject({
+            title: 'Welcome',
+            description: 'Your collaborative workspace',
+            isPublic: true,
+            isGlobal: true
+          });
+          defaultProject = newProject;
+        } else {
+          defaultProject = projects[0];
+        }
+
+        dispatch({
+          type: 'LOAD_WORKSPACE',
+          payload: {
+            ...state,
+            projects: projects.length > 0 ? projects : [defaultProject],
+            currentProject: defaultProject,
+            isInitializing: false,
           }
+        });
+
+        // Join the default project room for real-time collaboration
+        if (defaultProject) {
+          socketService.joinProject(defaultProject.id);
         }
       } catch (error) {
         console.error('Failed to initialize workspace:', error);
-      } finally {
-        setIsInitializing(false);
+        dispatch({
+          type: 'LOAD_WORKSPACE',
+          payload: {
+            ...state,
+            isInitializing: false,
+          }
+        });
       }
     };
 
     initializeWorkspace();
   }, []);
 
-  // Listen for online/offline status
+  // Socket event handlers
   useEffect(() => {
-    const handleOnline = () => dispatch({ type: 'SET_ONLINE_STATUS', payload: { isOnline: true } });
-    const handleOffline = () => dispatch({ type: 'SET_ONLINE_STATUS', payload: { isOnline: false } });
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // Socket event listeners
-  useEffect(() => {
-    const handleUserJoined = (data: any) => {
-      dispatch({ type: 'UPDATE_COLLABORATORS', payload: { collaborators: data.collaborators } });
-    };
-
-    const handleUserLeft = (data: any) => {
-      dispatch({ type: 'UPDATE_COLLABORATORS', payload: { collaborators: data.collaborators } });
-    };
-
     const handlePageContentUpdated = (data: any) => {
-      dispatch({ type: 'UPDATE_PAGE_CONTENT', payload: { 
-        pageId: data.pageId, 
-        content: data.content,
-        changeDescription: `Updated by ${data.user?.name || 'Unknown'}`
-      }});
+      console.log('Page content updated event received:', data);
+      dispatch({
+        type: 'UPDATE_PAGE_CONTENT',
+        payload: {
+          pageId: data.pageId,
+          content: data.content,
+          changeDescription: `Updated by ${data.user?.name || 'Unknown'}`
+        }
+      });
     };
 
     const handlePageTitleUpdated = (data: any) => {
-      dispatch({ type: 'UPDATE_PAGE_TITLE', payload: { 
-        pageId: data.pageId, 
-        title: data.title,
-        changeDescription: `Updated by ${data.user?.name || 'Unknown'}`
-      }});
+      console.log('Page title updated event received:', data);
+      dispatch({
+        type: 'UPDATE_PAGE_TITLE',
+        payload: {
+          pageId: data.pageId,
+          title: data.title,
+          changeDescription: `Updated by ${data.user?.name || 'Unknown'}`
+        }
+      });
     };
 
     const handlePageCreated = (data: any) => {
@@ -473,45 +407,20 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    socketService.on('user_joined', handleUserJoined);
-    socketService.on('user_left', handleUserLeft);
     socketService.on('page_content_updated', handlePageContentUpdated);
     socketService.on('page_title_updated', handlePageTitleUpdated);
     socketService.on('page_created', handlePageCreated);
 
     return () => {
-      socketService.off('user_joined', handleUserJoined);
-      socketService.off('user_left', handleUserLeft);
       socketService.off('page_content_updated', handlePageContentUpdated);
       socketService.off('page_title_updated', handlePageTitleUpdated);
       socketService.off('page_created', handlePageCreated);
     };
-  }, []);
+  }, [state.projects]);
 
   return (
     <WorkspaceContext.Provider value={{ state, dispatch }}>
-      {isInitializing ? (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '100vh',
-          fontSize: '16px',
-          color: '#666'
-        }}>
-          Loading...
-        </div>
-      ) : (
-        children
-      )}
+      {children}
     </WorkspaceContext.Provider>
   );
-}
-
-export function useWorkspace() {
-  const context = useContext(WorkspaceContext);
-  if (!context) {
-    throw new Error('useWorkspace must be used within a WorkspaceProvider');
-  }
-  return context;
-}
+};

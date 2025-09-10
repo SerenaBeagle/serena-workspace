@@ -3,14 +3,24 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import apiService from '../services/api';
 import socketService from '../services/socket';
 
-export function useWorkspaceActions() {
+export const useWorkspaceActions = () => {
   const { state, dispatch } = useWorkspace();
 
   // Project actions
   const createProject = useCallback(async (title: string, description?: string) => {
     try {
-      const projectData = await apiService.createProject({ title, description });
-      dispatch({ type: 'CREATE_PROJECT', payload: projectData });
+      const projectData = await apiService.createProject({
+        title,
+        description,
+        isPublic: true,
+        isGlobal: true
+      });
+      
+      dispatch({ type: 'CREATE_PROJECT', payload: { title, description } });
+      
+      // Join project room for real-time collaboration
+      socketService.joinProject(projectData.id);
+      
       return projectData;
     } catch (error) {
       console.error('Failed to create project:', error);
@@ -41,8 +51,6 @@ export function useWorkspaceActions() {
   const createPage = useCallback(async (projectId: string, title: string, parentPageId?: string) => {
     try {
       console.log('Creating page with data:', { projectId, title, parentPageId });
-      console.log('Current token:', localStorage.getItem('authToken') ? 'Present' : 'Missing');
-      console.log('Token value:', localStorage.getItem('authToken'));
       
       // Save current page content before creating new page
       if (state.currentPage) {
@@ -59,9 +67,6 @@ export function useWorkspaceActions() {
         parentPageId 
       };
       console.log('Request data being sent:', JSON.stringify(requestData, null, 2));
-      console.log('ProjectId type:', typeof projectId, 'Value:', projectId);
-      console.log('Title type:', typeof title, 'Value:', title);
-      console.log('ParentPageId type:', typeof parentPageId, 'Value:', parentPageId);
       
       const pageData = await apiService.createPage(requestData);
       
@@ -78,12 +83,6 @@ export function useWorkspaceActions() {
       return pageData;
     } catch (error) {
       console.error('Failed to create page:', error);
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack,
-        projectId,
-        title
-      });
       throw error;
     }
   }, [dispatch, state.currentPage, state.editorContent, updatePageContent]);
@@ -116,57 +115,19 @@ export function useWorkspaceActions() {
     }
   }, [dispatch]);
 
-  // Auth actions
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      const response = await apiService.login({ email, password });
-      apiService.setToken(response.token);
-      dispatch({ type: 'SET_CURRENT_USER', payload: { user: response.user } });
-      
-      // Connect to socket
-      socketService.connect(response.token);
-      
-      // Load projects
-      const projects = await apiService.getProjects();
-      dispatch({ type: 'LOAD_WORKSPACE', payload: { ...state, projects, currentUser: response.user } });
-      
-      return response;
-    } catch (error) {
-      console.error('Failed to login:', error);
-      throw error;
-    }
-  }, [dispatch, state]);
-
-  const register = useCallback(async (name: string, email: string, password: string) => {
-    try {
-      const response = await apiService.register({ name, email, password });
-      apiService.setToken(response.token);
-      dispatch({ type: 'SET_CURRENT_USER', payload: { user: response.user } });
-      
-      // Connect to socket
-      socketService.connect(response.token);
-      
-      return response;
-    } catch (error) {
-      console.error('Failed to register:', error);
-      throw error;
-    }
-  }, [dispatch]);
-
-  const logout = useCallback(() => {
-    apiService.clearToken();
-    socketService.disconnect();
-    dispatch({ type: 'LOGOUT' });
-  }, [dispatch]);
-
-  // Page link actions
   const createPageLink = useCallback(async (sourcePageId: string, targetPageId: string, linkText: string) => {
     try {
-      const linkData = await apiService.createPageLink(sourcePageId, { 
-        targetPageId, 
-        linkText 
+      const linkData = await apiService.createPageLink({
+        sourcePageId,
+        targetPageId,
+        linkText
       });
-      dispatch({ type: 'CREATE_PAGE_LINK', payload: linkData });
+      
+      dispatch({ 
+        type: 'CREATE_PAGE_LINK', 
+        payload: { sourcePageId, targetPageId, linkText } 
+      });
+      
       return linkData;
     } catch (error) {
       console.error('Failed to create page link:', error);
@@ -174,7 +135,19 @@ export function useWorkspaceActions() {
     }
   }, [dispatch]);
 
-  // Version history actions
+  const restorePageVersion = useCallback(async (pageId: string, version: any) => {
+    try {
+      await apiService.restorePageVersion(pageId, version.id);
+      dispatch({ 
+        type: 'RESTORE_PAGE_VERSION', 
+        payload: { pageId, version } 
+      });
+    } catch (error) {
+      console.error('Failed to restore page version:', error);
+      throw error;
+    }
+  }, [dispatch]);
+
   const getPageVersions = useCallback(async (pageId: string) => {
     try {
       const versions = await apiService.getPageVersions(pageId);
@@ -185,37 +158,8 @@ export function useWorkspaceActions() {
     }
   }, []);
 
-  const restorePageVersion = useCallback(async (pageId: string, versionId: string) => {
-    try {
-      const version = await apiService.restorePageVersion(pageId, versionId);
-      dispatch({ type: 'RESTORE_PAGE_VERSION', payload: { pageId, version } });
-      return version;
-    } catch (error) {
-      console.error('Failed to restore page version:', error);
-      throw error;
-    }
-  }, [dispatch]);
-
-  // Collaboration actions
-  const addCollaborator = useCallback(async (projectId: string, email: string, role: 'editor' | 'viewer') => {
-    try {
-      const collaborator = await apiService.addCollaborator(projectId, { email, role });
-      dispatch({ type: 'ADD_COLLABORATOR', payload: { projectId, userId: collaborator.userId, role } });
-      return collaborator;
-    } catch (error) {
-      console.error('Failed to add collaborator:', error);
-      throw error;
-    }
-  }, [dispatch]);
-
-  const removeCollaborator = useCallback(async (projectId: string, userId: string) => {
-    try {
-      await apiService.removeCollaborator(projectId, userId);
-      dispatch({ type: 'REMOVE_COLLABORATOR', payload: { projectId, userId } });
-    } catch (error) {
-      console.error('Failed to remove collaborator:', error);
-      throw error;
-    }
+  const toggleSplitView = useCallback(() => {
+    dispatch({ type: 'TOGGLE_SPLIT_VIEW' });
   }, [dispatch]);
 
   return {
@@ -228,21 +172,9 @@ export function useWorkspaceActions() {
     selectPage,
     updatePageContent,
     updatePageTitle,
-    
-    // Auth actions
-    login,
-    register,
-    logout,
-    
-    // Page link actions
     createPageLink,
-    
-    // Version history actions
-    getPageVersions,
     restorePageVersion,
-    
-    // Collaboration actions
-    addCollaborator,
-    removeCollaborator,
+    getPageVersions,
+    toggleSplitView,
   };
-}
+};

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Test</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testCreateProject()">Test Create Project</button>
+    <button onclick="testCreatePage()">Test Create Page</button>
+    <div id="output"></div>
+
+    <script>
+        const API_BASE = 'https://serena-workspace-production.up.railway.app/api';
+        let token = null;
+        let projectId = null;
+
+        async function testLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        password: 'password123'
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Login response:', data);
+                
+                if (data.token) {
+                    token = data.token;
+                    document.getElementById('output').innerHTML += '<p>✅ Login successful! Token: ' + token.substring(0, 20) + '...</p>';
+                } else {
+                    document.getElementById('output').innerHTML += '<p>❌ Login failed: ' + JSON.stringify(data) + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('output').innerHTML += '<p>❌ Login error: ' + error.message + '</p>';
+            }
+        }
+
+        async function testCreateProject() {
+            if (!token) {
+                document.getElementById('output').innerHTML += '<p>❌ Please login first</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/projects`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title: 'Test Project',
+                        description: 'Test project for debugging'
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Create project response:', data);
+                
+                if (data._id) {
+                    projectId = data._id;
+                    document.getElementById('output').innerHTML += '<p>✅ Project created! ID: ' + projectId + '</p>';
+                } else {
+                    document.getElementById('output').innerHTML += '<p>❌ Project creation failed: ' + JSON.stringify(data) + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('output').innerHTML += '<p>❌ Project creation error: ' + error.message + '</p>';
+            }
+        }
+
+        async function testCreatePage() {
+            if (!token || !projectId) {
+                document.getElementById('output').innerHTML += '<p>❌ Please login and create project first</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/pages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title: 'Test Page',
+                        projectId: projectId,
+                        content: 'Test page content'
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Create page response:', data);
+                
+                if (data._id) {
+                    document.getElementById('output').innerHTML += '<p>✅ Page created! ID: ' + data._id + '</p>';
+                } else {
+                    document.getElementById('output').innerHTML += '<p>❌ Page creation failed: ' + JSON.stringify(data) + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('output').innerHTML += '<p>❌ Page creation error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

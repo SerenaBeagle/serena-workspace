@@ -67,9 +67,8 @@ export interface WorkspaceState {
   currentPage: Page | null;
   isSplitView: boolean;
   pageLinks: PageLink[];
-  users: User[];
-  currentUser: User | null;
   pageVersions: PageVersion[];
-  isOnline: boolean;
-  collaborators: User[]; // Currently online collaborators
+  actionLogs: ActionLog[];
+  editorContent: string;
+  isInitializing: boolean;
 }

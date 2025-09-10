@@ -129,11 +129,6 @@ export default function Sidebar() {
                 <button
                   className="add-page-button"
                   onClick={async () => {
-                    if (!state.currentUser) {
-                      alert('Please log in first to create pages.');
-                      return;
-                    }
-                    
                     const title = prompt('Page title:');
                     if (title?.trim()) {
                       try {
