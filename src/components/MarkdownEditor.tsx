@@ -18,7 +18,7 @@ export default function MarkdownEditor({ pageId, content, isSplitView = false }:
 
   useEffect(() => {
     setEditorContent(content);
-  }, [content]);
+  }, [content, pageId]); // Also update when pageId changes
 
   const handleEditorChange = async (value: string | undefined) => {
     const newContent = value || '';

@@ -5,6 +5,7 @@ const PageVersion = require('../models/PageVersion');
 const PageLink = require('../models/PageLink');
 const { auth } = require('../middleware/auth');
 const { checkProjectPermission, checkPagePermission } = require('../middleware/permissions');
+const { logAction } = require('../middleware/logging');
 
 const router = express.Router();
 
@@ -14,7 +15,13 @@ router.post('/', auth, [
   body('projectId').isMongoId().withMessage('Valid project ID required'),
   body('parentPageId').optional().isMongoId(),
   body('content').optional().isString()
-], async (req, res) => {
+], logAction(
+  'create',
+  'page',
+  (req) => `Created page "${req.body.title}"`,
+  (req, data) => data?.id,
+  (req) => req.body.title
+), async (req, res) => {
   try {
     console.log('=== CREATE PAGE REQUEST ===');
     console.log('Headers:', req.headers);

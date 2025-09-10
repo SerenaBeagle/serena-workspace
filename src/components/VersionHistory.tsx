@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Eye, RotateCcw } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useWorkspaceActions } from '../hooks/useWorkspaceActions';
 import { PageVersion } from '../types';
 
 interface VersionHistoryProps {
@@ -11,12 +12,32 @@ interface VersionHistoryProps {
 
 export default function VersionHistory({ pageId, onClose, onRestore }: VersionHistoryProps) {
   const { state } = useWorkspace();
+  const { getPageVersions } = useWorkspaceActions();
   const [selectedVersion, setSelectedVersion] = useState<PageVersion | null>(null);
+  const [pageVersions, setPageVersions] = useState<PageVersion[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Get versions for the current page
-  const pageVersions = state.pageVersions
+  // Load page versions when component mounts
+  useEffect(() => {
+    const loadVersions = async () => {
+      try {
+        setLoading(true);
+        const versions = await getPageVersions(pageId);
+        setPageVersions(versions);
+      } catch (error) {
+        console.error('Failed to load page versions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadVersions();
+  }, [pageId, getPageVersions]);
+
+  // Sort versions by creation date
+  const sortedVersions = pageVersions
     .filter(version => version && version.pageId === pageId)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Get user info
   const getUserInfo = (userId: string) => {
@@ -80,7 +101,17 @@ export default function VersionHistory({ pageId, onClose, onRestore }: VersionHi
 
         <div className="version-history-body">
           <div className="versions-list">
-            {pageVersions.map((version, index) => {
+            {loading ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="text-gray-500 mt-2">Loading versions...</p>
+              </div>
+            ) : sortedVersions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>No version history available</p>
+              </div>
+            ) : (
+              sortedVersions.map((version, index) => {
               const user = getUserInfo(version.createdBy);
               const isLatest = index === 0;
               
@@ -143,7 +174,8 @@ export default function VersionHistory({ pageId, onClose, onRestore }: VersionHi
                   )}
                 </div>
               );
-            })}
+              })
+            )}
           </div>
 
           {selectedVersion && (
