@@ -142,6 +142,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         };
       }
 
+      console.log('CREATE_PAGE: Setting currentPage to new page:', newPage.id);
       return {
         ...state,
         projects: updatedProjects,
@@ -156,6 +157,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
       const page = state.projects
         .flatMap(p => p.pages)
         .find(p => p.id === action.payload.pageId);
+      console.log('SELECT_PAGE: Selecting page:', action.payload.pageId, 'Found:', !!page);
       return {
         ...state,
         currentPage: page || null,
@@ -447,19 +449,28 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
     const handlePageCreated = (data: any) => {
       console.log('Page created event received:', data);
-      dispatch({ type: 'CREATE_PAGE', payload: {
-        id: data.pageId,
-        title: data.title,
-        content: '',
-        projectId: data.projectId,
-        createdBy: data.createdBy,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.createdAt),
-        parentPageId: undefined,
-        childPages: [],
-        linkedPages: [],
-        lastModifiedBy: data.createdBy
-      }});
+      // Only add page if it doesn't already exist (for other users)
+      const existingPage = state.projects
+        .flatMap(p => p.pages)
+        .find(p => p.id === data.pageId);
+      
+      if (!existingPage) {
+        dispatch({ type: 'CREATE_PAGE', payload: {
+          id: data.pageId,
+          title: data.title,
+          content: '',
+          projectId: data.projectId,
+          createdBy: data.createdBy,
+          createdAt: new Date(data.createdAt),
+          updatedAt: new Date(data.createdAt),
+          parentPageId: undefined,
+          childPages: [],
+          linkedPages: [],
+          lastModifiedBy: data.createdBy
+        }});
+      } else {
+        console.log('Page already exists, skipping creation');
+      }
     };
 
     socketService.on('user_joined', handleUserJoined);
