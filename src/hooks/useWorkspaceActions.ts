@@ -45,6 +45,13 @@ export function useWorkspaceActions() {
       
       console.log('Page created successfully:', pageData);
       dispatch({ type: 'CREATE_PAGE', payload: pageData });
+      
+      // Join project room if not already joined
+      socketService.joinProject(projectId);
+      
+      // Broadcast page creation to other users
+      socketService.broadcastPageCreated(pageData);
+      
       return pageData;
     } catch (error) {
       console.error('Failed to create page:', error);

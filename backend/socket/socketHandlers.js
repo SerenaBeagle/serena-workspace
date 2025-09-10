@@ -178,6 +178,21 @@ const socketHandlers = (socket, io) => {
     });
   });
 
+  // Handle page creation broadcast
+  socket.on('page_created', (data) => {
+    console.log('Page created broadcast:', { userId: socket.userId, pageId: data.pageId, title: data.title });
+    
+    // Broadcast to all users in the project
+    socket.to(`project_${data.projectId}`).emit('page_created', {
+      pageId: data.pageId,
+      projectId: data.projectId,
+      title: data.title,
+      createdBy: data.createdBy,
+      createdAt: data.createdAt,
+      createdByUser: socket.user?.name || 'Unknown'
+    });
+  });
+
   // Handle cursor position changes
   socket.on('cursor_position_change', (data) => {
     const { pageId, cursorPosition } = data;

@@ -136,6 +136,8 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
           projects: projectsWithUpdatedParent,
           currentProject: projectsWithUpdatedParent.find(p => p.id === action.payload.projectId) || null,
           currentPage: newPage,
+          // Clear editor content for new page
+          editorContent: '',
         };
       }
 
@@ -144,6 +146,8 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         projects: updatedProjects,
         currentProject: updatedProjects.find(p => p.id === action.payload.projectId) || null,
         currentPage: newPage,
+        // Clear editor content for new page
+        editorContent: '',
       };
     }
 
@@ -440,16 +444,34 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       }});
     };
 
+    const handlePageCreated = (data: any) => {
+      console.log('Page created event received:', data);
+      dispatch({ type: 'CREATE_PAGE', payload: {
+        id: data.pageId,
+        title: data.title,
+        content: '',
+        projectId: data.projectId,
+        createdBy: data.createdBy,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.createdAt),
+        parentPageId: undefined,
+        childPages: [],
+        linkedPages: []
+      }});
+    };
+
     socketService.on('user_joined', handleUserJoined);
     socketService.on('user_left', handleUserLeft);
     socketService.on('page_content_updated', handlePageContentUpdated);
     socketService.on('page_title_updated', handlePageTitleUpdated);
+    socketService.on('page_created', handlePageCreated);
 
     return () => {
       socketService.off('user_joined', handleUserJoined);
       socketService.off('user_left', handleUserLeft);
       socketService.off('page_content_updated', handlePageContentUpdated);
       socketService.off('page_title_updated', handlePageTitleUpdated);
+      socketService.off('page_created', handlePageCreated);
     };
   }, []);
 

@@ -212,6 +212,19 @@ class SocketService {
     }
   }
 
+  // Broadcast page creation
+  broadcastPageCreated(pageData) {
+    if (this.socket) {
+      this.socket.emit('page_created', {
+        pageId: pageData.id,
+        projectId: pageData.projectId,
+        title: pageData.title,
+        createdBy: pageData.createdBy,
+        createdAt: pageData.createdAt
+      });
+    }
+  }
+
   // Event listener management
   on(event, callback) {
     if (!this.listeners.has(event)) {
