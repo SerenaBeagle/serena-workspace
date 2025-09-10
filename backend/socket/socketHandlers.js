@@ -113,19 +113,30 @@ const socketHandlers = (socket, io) => {
   // Handle page editing
   socket.on('start_editing', async (pageId) => {
     try {
+      console.log('User starting to edit page:', { userId: socket.userId, pageId });
+      
       if (!socket.userId) {
         socket.emit('error', { message: 'Not authenticated' });
         return;
       }
 
       const page = await Page.findById(pageId).populate('projectId');
-      if (!page || !page.projectId.hasPermission(socket.userId, 'viewer')) {
+      if (!page) {
+        socket.emit('error', { message: 'Page not found' });
+        return;
+      }
+      
+      // For global projects, allow all authenticated users
+      if (page.projectId.isGlobal && page.projectId.isPublic) {
+        // Allow all users to edit global public pages
+      } else if (!page.projectId.hasPermission(socket.userId, 'viewer')) {
         socket.emit('error', { message: 'No access to page' });
         return;
       }
 
       // Join page room
       socket.join(`page_${pageId}`);
+      console.log('User joined page room:', { userId: socket.userId, pageId, room: `page_${pageId}` });
       
       // Notify others that user is editing
       socket.to(`page_${pageId}`).emit('user_editing', {
@@ -143,6 +154,7 @@ const socketHandlers = (socket, io) => {
   // Handle page content changes
   socket.on('page_content_change', (data) => {
     const { pageId, content, cursorPosition } = data;
+    console.log('Page content change received:', { userId: socket.userId, pageId, contentLength: content?.length });
     
     // Broadcast to other users in the same page
     socket.to(`page_${pageId}`).emit('page_content_updated', {
