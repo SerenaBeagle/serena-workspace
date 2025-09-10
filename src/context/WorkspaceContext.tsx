@@ -167,7 +167,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
     case 'UPDATE_PAGE_CONTENT': {
       const updatedProjects = state.projects.map(project => ({
         ...project,
-        pages: project.pages.map(page =>
+        pages: (project.pages || []).map(page =>
           page.id === action.payload.pageId
             ? { ...page, content: action.payload.content, updatedAt: new Date() }
             : page
@@ -188,7 +188,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
     case 'UPDATE_PAGE_TITLE': {
       const updatedProjects = state.projects.map(project => ({
         ...project,
-        pages: project.pages.map(page =>
+        pages: (project.pages || []).map(page =>
           page.id === action.payload.pageId
             ? { ...page, title: action.payload.title, updatedAt: new Date() }
             : page
@@ -226,7 +226,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
       // Update the source page's linkedPages array
       const updatedProjects = state.projects.map(project => ({
         ...project,
-        pages: project.pages.map(page =>
+        pages: (project.pages || []).map(page =>
           page.id === action.payload.sourcePageId
             ? { ...page, linkedPages: [...page.linkedPages, action.payload.targetPageId] }
             : page
@@ -322,7 +322,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
       // Update the page with the restored version
       const updatedProjects = state.projects.map(project => ({
         ...project,
-        pages: project.pages.map(page =>
+        pages: (project.pages || []).map(page =>
           page.id === pageId
             ? {
                 ...page,

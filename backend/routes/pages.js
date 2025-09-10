@@ -16,7 +16,7 @@ router.post('/', auth, [
   body('parentPageId').optional().isMongoId(),
   body('content').optional().isString()
 ], logAction(
-  'create',
+  'page_created',
   'page',
   (req) => `Created page "${req.body.title}"`,
   (req, data) => data?.id,
