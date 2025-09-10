@@ -38,9 +38,11 @@ const socketHandlers = (socket, io) => {
     clearTimeout(connectionTimeout);
   });
   
-  // Authenticate socket connection
-  socket.on('authenticate', async (token) => {
+  // Authenticate socket connection - handle both auth object and authenticate event
+  const authenticateUser = async (token) => {
     try {
+      console.log('Authenticating user with token:', token ? 'Present' : 'Missing');
+      
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findById(decoded.userId).select('-password');
       
@@ -64,9 +66,19 @@ const socketHandlers = (socket, io) => {
       socket.emit('authenticated', { user });
       console.log(`User ${user.name} authenticated with socket ${socket.id}`);
     } catch (error) {
+      console.error('Socket authentication error:', error);
       socket.emit('auth_error', { message: 'Authentication failed' });
     }
-  });
+  };
+
+  // Handle authentication from auth object (Socket.IO 4+)
+  if (socket.handshake.auth && socket.handshake.auth.token) {
+    console.log('Authenticating from auth object');
+    authenticateUser(socket.handshake.auth.token);
+  }
+
+  // Handle authentication from authenticate event
+  socket.on('authenticate', authenticateUser);
 
   // Join project room
   socket.on('join_project', async (projectId) => {
