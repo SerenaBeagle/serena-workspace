@@ -63,10 +63,7 @@ const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/notion-wo
 console.log('Attempting to connect to MongoDB...');
 console.log('MongoDB URI:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
 
-mongoose.connect(mongoUri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(mongoUri)
 .then(() => {
   console.log('MongoDB connected successfully');
   console.log('Database connection established');
