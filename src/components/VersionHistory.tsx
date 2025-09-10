@@ -15,7 +15,7 @@ export default function VersionHistory({ pageId, onClose, onRestore }: VersionHi
 
   // Get versions for the current page
   const pageVersions = state.pageVersions
-    .filter(version => version.pageId === pageId)
+    .filter(version => version && version.pageId === pageId)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   // Get user info

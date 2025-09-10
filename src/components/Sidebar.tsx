@@ -48,7 +48,7 @@ export default function Sidebar() {
     }
     
     const rootPages = pages.filter(page => 
-      parentId ? page.parentPageId === parentId : !page.parentPageId
+      page && page.id && (parentId ? page.parentPageId === parentId : !page.parentPageId)
     );
 
     return rootPages.map((page) => (

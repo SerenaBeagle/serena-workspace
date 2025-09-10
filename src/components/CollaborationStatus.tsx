@@ -9,7 +9,7 @@ export default function CollaborationStatus() {
     
     const collaboratorIds = state.currentProject.collaborators.map(c => c.userId);
     return state.collaborators.filter(user => 
-      collaboratorIds.includes(user.id) && user.id !== state.currentUser?.id
+      user && user.id && collaboratorIds.includes(user.id) && user.id !== state.currentUser?.id
     );
   };
 

@@ -16,12 +16,12 @@ export default function PageLinkCreator({ currentPageId, onLinkCreated }: PageLi
 
   // Get all pages from all projects, excluding the current page
   const allPages = state.projects
-    .flatMap(project => project.pages)
-    .filter(page => page.id !== currentPageId);
+    .flatMap(project => project.pages || [])
+    .filter(page => page && page.id && page.id !== currentPageId);
 
   // Filter pages based on search term
   const filteredPages = allPages.filter(page =>
-    page.title.toLowerCase().includes(searchTerm.toLowerCase())
+    page && page.title && page.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleCreateLink = () => {
