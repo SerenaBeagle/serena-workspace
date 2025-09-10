@@ -22,6 +22,12 @@ export default function MarkdownEditor({ pageId, content, isSplitView = false }:
 
   const handleEditorChange = async (value: string | undefined) => {
     const newContent = value || '';
+    console.log('Editor content changed:', {
+      pageId,
+      newContent: newContent.substring(0, 100) + '...',
+      isUpdating
+    });
+    
     setEditorContent(newContent);
     
     // Debounce API calls
@@ -29,7 +35,9 @@ export default function MarkdownEditor({ pageId, content, isSplitView = false }:
     
     setIsUpdating(true);
     try {
+      console.log('Saving page content to backend...');
       await updatePageContent(pageId, newContent, 'Content updated');
+      console.log('Page content saved successfully');
     } catch (error) {
       console.error('Failed to update page content:', error);
     } finally {

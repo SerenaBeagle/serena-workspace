@@ -46,7 +46,20 @@ router.post('/', [
       lastModifiedBy: 'anonymous'
     });
 
+    console.log('Creating new page:', {
+      title,
+      content,
+      projectId,
+      parentPageId
+    });
+
     await page.save();
+    
+    console.log('Page created and saved to database:', {
+      pageId: page._id,
+      title: page.title,
+      content: page.content
+    });
 
     // Create initial version
     const version = new PageVersion({
@@ -102,15 +115,34 @@ router.put('/:pageId/content', [
       return res.status(404).json({ message: 'Page not found' });
     }
 
+    console.log('Updating page content:', {
+      pageId: req.params.pageId,
+      oldContent: page.content,
+      newContent: content
+    });
+    
     page.content = content;
     page.updatedAt = new Date();
     page.lastModifiedBy = 'anonymous';
     await page.save();
+    
+    console.log('Page content saved successfully:', {
+      pageId: page._id,
+      content: page.content,
+      updatedAt: page.updatedAt
+    });
+
+    // Get the latest version number
+    const latestVersion = await PageVersion.findOne({ pageId: page._id })
+      .sort({ version: -1 })
+      .limit(1);
+    
+    const nextVersion = latestVersion ? latestVersion.version + 1 : 1;
 
     // Create new version
     const version = new PageVersion({
       pageId: page._id,
-      version: 1, // This should be calculated based on existing versions
+      version: nextVersion,
       title: page.title,
       content: page.content,
       changeType: 'edit',
