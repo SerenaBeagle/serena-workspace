@@ -24,6 +24,19 @@ export function useWorkspaceActions() {
     socketService.joinProject(projectId);
   }, [dispatch]);
 
+  const updatePageContent = useCallback(async (pageId: string, content: string, changeDescription?: string) => {
+    try {
+      await apiService.updatePageContent(pageId, content, changeDescription);
+      dispatch({ type: 'UPDATE_PAGE_CONTENT', payload: { pageId, content, changeDescription } });
+      
+      // Broadcast change to other users
+      socketService.updatePageContent(pageId, content);
+    } catch (error) {
+      console.error('Failed to update page content:', error);
+      throw error;
+    }
+  }, [dispatch]);
+
   // Page actions
   const createPage = useCallback(async (projectId: string, title: string, parentPageId?: string) => {
     try {
@@ -73,7 +86,7 @@ export function useWorkspaceActions() {
       });
       throw error;
     }
-  }, [dispatch]);
+  }, [dispatch, state.currentPage, state.editorContent, updatePageContent]);
 
   const selectPage = useCallback(async (pageId: string) => {
     // Save current page content before switching
@@ -89,19 +102,6 @@ export function useWorkspaceActions() {
     // Start editing for real-time collaboration
     socketService.startEditing(pageId);
   }, [dispatch, state.currentPage, state.editorContent, updatePageContent]);
-
-  const updatePageContent = useCallback(async (pageId: string, content: string, changeDescription?: string) => {
-    try {
-      await apiService.updatePageContent(pageId, content, changeDescription);
-      dispatch({ type: 'UPDATE_PAGE_CONTENT', payload: { pageId, content, changeDescription } });
-      
-      // Broadcast change to other users
-      socketService.updatePageContent(pageId, content);
-    } catch (error) {
-      console.error('Failed to update page content:', error);
-      throw error;
-    }
-  }, [dispatch]);
 
   const updatePageTitle = useCallback(async (pageId: string, title: string, changeDescription?: string) => {
     try {
