@@ -18,9 +18,9 @@ const pageLinkSchema = new mongoose.Schema({
     maxlength: 200
   },
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: String,
+    required: true,
+    default: 'anonymous'
   },
   isActive: {
     type: Boolean,

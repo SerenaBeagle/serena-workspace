@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 
 const collaboratorSchema = new mongoose.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: String,
+    required: true,
+    default: 'anonymous'
   },
   role: {
     type: String,
@@ -16,9 +16,9 @@ const collaboratorSchema = new mongoose.Schema({
     default: Date.now
   },
   addedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: String,
+    required: true,
+    default: 'anonymous'
   }
 });
 
@@ -35,9 +35,9 @@ const projectSchema = new mongoose.Schema({
     maxlength: 500
   },
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: String,
+    required: true,
+    default: 'anonymous'
   },
   workspaceId: {
     type: mongoose.Schema.Types.ObjectId,

@@ -30,14 +30,14 @@ const pageSchema = new mongoose.Schema({
     ref: 'Page'
   }],
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: String,
+    required: true,
+    default: 'anonymous'
   },
   lastModifiedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: String,
+    required: true,
+    default: 'anonymous'
   },
   isArchived: {
     type: Boolean,

@@ -20,9 +20,9 @@ const pageVersionSchema = new mongoose.Schema({
     default: ''
   },
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: String,
+    required: true,
+    default: 'anonymous'
   },
   changeType: {
     type: String,
