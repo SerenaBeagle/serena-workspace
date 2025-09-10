@@ -97,18 +97,19 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
     }
 
     case 'CREATE_PAGE': {
+      // Use the page data from backend instead of creating new object
       const newPage: Page = {
-        id: uuidv4(),
+        id: action.payload.id,
         title: action.payload.title,
-        content: '',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        content: action.payload.content || '',
+        createdAt: new Date(action.payload.createdAt),
+        updatedAt: new Date(action.payload.updatedAt),
         projectId: action.payload.projectId,
         parentPageId: action.payload.parentPageId,
-        childPages: [],
-        linkedPages: [],
-        createdBy: state.currentUser?.id || 'anonymous',
-        lastModifiedBy: state.currentUser?.id || 'anonymous',
+        childPages: action.payload.childPages || [],
+        linkedPages: action.payload.linkedPages || [],
+        createdBy: action.payload.createdBy || state.currentUser?.id || 'anonymous',
+        lastModifiedBy: action.payload.lastModifiedBy || state.currentUser?.id || 'anonymous',
       };
 
       const updatedProjects = state.projects.map(project =>
@@ -456,7 +457,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         updatedAt: new Date(data.createdAt),
         parentPageId: undefined,
         childPages: [],
-        linkedPages: []
+        linkedPages: [],
+        lastModifiedBy: data.createdBy
       }});
     };
 

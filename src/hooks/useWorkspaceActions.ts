@@ -44,6 +44,7 @@ export function useWorkspaceActions() {
       const pageData = await apiService.createPage(requestData);
       
       console.log('Page created successfully:', pageData);
+      console.log('Page ID from backend:', pageData.id);
       dispatch({ type: 'CREATE_PAGE', payload: pageData });
       
       // Join project room if not already joined
